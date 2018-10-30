@@ -9,11 +9,16 @@
 import UIKit
 
 @IBDesignable open class YSRangeSlider: UIControl {
+    
+    public enum ChangeType: Int {
+        case initiate, minimum, maximum
+    }
+    
     // MARK: - Public Properties
     
     /// The minimum possible value to select in the range. The default value of this property is `0.0`
     @IBInspectable open var minimumValue: CGFloat = 0.0 {
-        didSet { updateComponentsPosition() }
+        didSet { updateComponentsPosition(.minimum) }
     }
     /// The maximum possible value to select in the range. The default value of this property is `1.0`
     @IBInspectable open var maximumValue: CGFloat = 1.0 {
@@ -21,7 +26,7 @@ import UIKit
             if step > maximumValue {
                 preconditionFailure("Step value must be less than or equal to maximum value")
             }
-            updateComponentsPosition()
+            updateComponentsPosition(.maximum)
         }
     }
     /// The preselected minimum value from range [minimumValue, maximumValue]. The default value of this property is `0.0`
@@ -33,7 +38,7 @@ import UIKit
             if step > 0 {
                 minimumSelectedValue = CGFloat(roundf(Float(minimumSelectedValue / step))) * step
             }
-            updateComponentsPosition()
+            updateComponentsPosition(.minimum)
         }
     }
     /// The preselected maximum value from range [minimumValue, maximumValue]. The default value of this property is `1.0`
@@ -45,7 +50,7 @@ import UIKit
             if step > 0 {
                 maximumSelectedValue = CGFloat(roundf(Float(maximumSelectedValue / step))) * step
             }
-            updateComponentsPosition()
+            updateComponentsPosition(.maximum)
         }
     }
     /** The step, or increment, value for the slider. The default value of this property is `0.0`
@@ -211,7 +216,7 @@ import UIKit
         rightThumbLayer.shadowRadius = rightThumbShadowRadius
         layer.addSublayer(rightThumbLayer)
         
-        updateComponentsPosition()
+        updateComponentsPosition(.initiate)
     }
     
     override open func layoutSubviews() {
@@ -279,13 +284,13 @@ import UIKit
     
     // MARK: - Private Functions
     
-    private func updateComponentsPosition() {
+    private func updateComponentsPosition(_ type: ChangeType) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         updateThumbsPosition()
         CATransaction.commit()
         
-        delegate?.rangeSliderDidChange(self, minimumSelectedValue: minimumSelectedValue, maximumSelectedValue: maximumSelectedValue)
+        delegate?.rangeSliderDidChange(self, minimumSelectedValue: minimumSelectedValue, maximumSelectedValue: maximumSelectedValue, changeType: type)
     }
     
     private func updateThumbsPosition() {
@@ -319,7 +324,7 @@ import UIKit
     private func animate(thumbLayer: CALayer, isSelected selected: Bool) {
         CATransaction.begin()
         CATransaction.setAnimationDuration(0.5)
-        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut))
+        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
         thumbLayer.transform = selected ? CATransform3DMakeScale(1.3, 1.3, 1) : CATransform3DIdentity
         CATransaction.commit()
     }
@@ -342,6 +347,7 @@ public protocol YSRangeSliderDelegate: class {
         - rangeSlider: Current instance of `YSRangeSlider`
         - minimumSelectedValue: The minimum selected value
         - maximumSelectedValue: The maximum selected value
+        - changeType: The change type
     */
-    func rangeSliderDidChange(_ rangeSlider: YSRangeSlider, minimumSelectedValue: CGFloat, maximumSelectedValue: CGFloat)
+    func rangeSliderDidChange(_ rangeSlider: YSRangeSlider, minimumSelectedValue: CGFloat, maximumSelectedValue: CGFloat, changeType: YSRangeSlider.ChangeType)
 }
